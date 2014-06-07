@@ -36,17 +36,30 @@ def vcenter_lookup(site):
    print site1
  sys.exit(-1)
 
+def output(file, format):
+  bleh = "blah"
+
 def main():
-  parser = argparse.ArgumentParser(description='Roster_builder builds out an YAML roster file by querying vcenter for the specified regex.')
-  parser.add_argument("-r", "--regex", help="Regex search string. Example: \"dfw1-access0[0-9].*\"", default=".*")  
-  parser.add_argument("-u", "--username", help="Vcenter username.", default="admin")
-  parser.add_argument("-c", "--cluster", help="Specify cluster to grab node data for. Ex: ACDP")
-  parser.add_argument("-s", "--site", help="Build a roster for a specific site.", default=0)
-  parser.add_argument("-f", "--file", help="Name of roster file to write to [Default: roster.txt]", default="roster.txt")
+  parser = argparse.ArgumentParser(
+           description='Roster_builder builds out an YAML roster file by querying vcenter for the specified regex.')
+  parser.add_argument("-r", "--regex", 
+                       help="Regex search string. Example: \"dfw1-access0[0-9].*\"", default=".*")  
+  parser.add_argument("-u", "--username", 
+                       help="Vcenter username.", default="admin")
+  parser.add_argument("-c", "--cluster", 
+                       help="Specify cluster to grab node data for. Ex: ACDP")
+  parser.add_argument("-s", "--site", 
+                       help="Build a roster for a specific site.", default=0)
+  parser.add_argument("-f", "--file", 
+                       help="Name of roster file to write to [Default: roster.txt]", default="roster.txt")
+  parser.add_argument("-F","--format", 
+                       help="Output format. Supported types are YAML,JSON,CSV. [Default: YAML]", default="YAML")
   args = parser.parse_args()
 
   server = VIServer()
-  properties = ['name', 'summary.runtime.powerState', 'config.guestFullName', 'guest.ipAddress', 'guest.hostName', 'guest.toolsRunningStatus']
+  properties = ['name', 
+                'summary.runtime.powerState', 'config.guestFullName', 
+                'guest.ipAddress', 'guest.hostName', 'guest.toolsVersion']
   hosts = []
   vmlist = []
   regex = args.regex
@@ -72,9 +85,10 @@ def main():
     else:
         clusters = { "key": args.cluster }.iteritems()
 
+    # Grab hosts by cluster
     for key, value in clusters:
-      cluster = [k for k,v in server.get_clusters().iteritems() if v==value]
       print "Cluster: ",value
+      cluster = [k for k,v in server.get_clusters().iteritems() if v==value]
 
       for node in cluster:
         vmlist = server._retrieve_properties_traversal(
@@ -104,17 +118,22 @@ def main():
             ipAddress = prop.Val
           elif prop.Name == 'name':
             name = prop.Val
-          elif prop.Name == 'guest.toolsRunningStatus':
-            toolsRunningStatus = prop.Val
+          elif prop.Name == 'guest.toolsVersion':
+            toolsStatus = prop.Val
 
         if powerState == 'poweredOff':
-          toolsRunningStatus = 'poweredOff'
+          toolsStatus = 'poweredOff'
  
+        if toolsStatus == "0" or toolsStatus is None:
+          toolsStatus = 'Not installed'
+        else:
+          toolsStatus = 'Installed'
+
         if re.search(regex,hostName):
           f.write('   '+ hostName + ':\n')
           f.write('      ipAddress: ' + ipAddress + '\n')
           f.write('      powerState: ' + powerState + '\n')
-          f.write('      toolsRunningStatus: ' + toolsRunningStatus + '\n')
+          f.write('      toolsStatus: ' + toolsStatus + '\n')
 
 if __name__ =='__main__':
   main()
