@@ -1,6 +1,7 @@
 Various salt tools
 ------------------
 
+Usage
 ------------------
 usage: roster_builder.py [-h] -r REGEX [-u USERNAME] [-s SITE] [-f FILE]
 
@@ -15,4 +16,3 @@ optional arguments:
                         Vcenter username.
   -s SITE, --site SITE  Build a roster for a specific site.
   -f FILE, --file FILE  Name of roster file to write to [Default: roster.txt]
--------------------
